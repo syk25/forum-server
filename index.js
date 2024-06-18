@@ -131,6 +131,19 @@ app.post("/api/thread/like", (req, res) => {
     });
 });
 
+/* 답글 표시 반환 */
+app.post("/api/thread/replies", (req, res) => {
+    //👇🏻 The post ID
+    const { id } = req.body;
+    //👇🏻 searches for the post
+    const result = threadList.filter((thread) => thread.id === id);
+    //👇🏻 return the title and replies
+    res.json({
+        replies: result[0].replies,
+        title: result[0].title,
+    });
+});
+
 app.listen(PORT, () => {
 	console.log(`Server listening on ${PORT}`);
 });
