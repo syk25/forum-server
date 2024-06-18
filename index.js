@@ -52,3 +52,23 @@ app.get("/api", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
 });
+
+/* 로그인 기능 구현 */
+app.post("/api/login", (req, res) => {
+    const { email, password } = req.body;
+    //👇🏻 checks if the user exists
+    let result = users.filter(
+        (user) => user.email === email && user.password === password
+    );
+    //👇🏻 if the user doesn't exist
+    if (result.length !== 1) {
+        return res.json({
+            error_message: "Incorrect credentials",
+        });
+    }
+    //👇🏻 Returns the id if successfuly logged in
+    res.json({
+        message: "Login successfully",
+        id: result[0].id,
+    });
+});
