@@ -101,6 +101,13 @@ app.post("/api/create/thread", async (req, res) => {
 	});
 });
 
+/* 스레드 리스트 반환 */
+app.get("/api/all/threads", (req, res) => {
+    res.json({
+        threads: threadList,
+    });
+});
+
 app.listen(PORT, () => {
 	console.log(`Server listening on ${PORT}`);
 });
