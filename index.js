@@ -69,6 +69,38 @@ app.post("/api/login", (req, res) => {
 	});
 });
 
+/* 스레드 생성 route */
+app.post("/api/create/thread", async (req, res) => {
+	const { thread, userId } = req.body;
+	const threadId = generateID();
+
+	console.log({ thread, userId, threadId });
+});
+
+//👇🏻 생성 된 포스트 저장
+const threadList = [];
+
+/* 스레드 생성 경로 */
+app.post("/api/create/thread", async (req, res) => {
+	const { thread, userId } = req.body;
+	const threadId = generateID();
+
+	//👇🏻 add post details to the array
+	threadList.unshift({
+		id: threadId,
+		title: thread,
+		userId,
+		replies: [],
+		likes: [],
+	});
+
+	//👇🏻 Returns a response containing the posts
+	res.json({
+		message: "Thread created successfully!",
+		threads: threadList,
+	});
+});
+
 app.listen(PORT, () => {
 	console.log(`Server listening on ${PORT}`);
 });
