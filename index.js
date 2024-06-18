@@ -108,6 +108,29 @@ app.get("/api/all/threads", (req, res) => {
     });
 });
 
+/* 좋아요 함수 */
+app.post("/api/thread/like", (req, res) => {
+    //post id 와 user id 확인
+    const { threadId, userId } = req.body;
+    // 반응을 받은 스레드 확인
+    const result = threadList.filter((thread) => thread.id === threadId);
+    // 좋아요 수 확인
+    const threadLikes = result[0].likes;
+    // 반응 인가
+    const authenticateReaction = threadLikes.filter((user) => user === userId);
+    // 사용자들을 좋아요 배열에 담기
+    if (authenticateReaction.length === 0) {
+        threadLikes.push(userId);
+        return res.json({
+            message: "You've reacted to the post!",
+        });
+    }
+    // 에러 유저에게 반환
+    res.json({
+        error_message: "You can only react once!",
+    });
+});
+
 app.listen(PORT, () => {
 	console.log(`Server listening on ${PORT}`);
 });
