@@ -28,7 +28,8 @@ const UserSchema = new Schema({
 const PostSchema = new Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
-    date: { type: Date, default: Date.now }
+    date: { type: Date, default: Date.now },
+    authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 });
 
 // User Model
@@ -80,10 +81,11 @@ app.post("/api/login", async (req, res) => {
 
 // 게시글 생성 엔드포인트
 app.post("/api/posts", async (req, res) => {
-    const { title, content } = req.body;
+    const { title, content, authorId } = req.body;
     const newPost = new Post({
         title,
-        content
+        content,
+        authorId
     });
 
     try {
@@ -114,7 +116,47 @@ app.get("/api/posts/:id", async (req, res) => {
     }
 });
 
-// 기존 스레드 관련 엔드포인트 수정 필요
+// 게시글 수정 엔드포인트
+app.put("/api/posts/:id", async (req, res) => {
+    const { id } = req.params;
+    const { title, content } = req.body;
+    try {
+        const post = await Post.findByIdAndUpdate(id, { title, content }, { new: true });
+        if (!post) {
+            return res.status(404).json({ error_message: "Post not found" });
+        }
+        res.json({ message: "Post updated successfully!", post });
+    } catch (error) {
+        res.status(500).json({ error_message: "Failed to update post" });
+    }
+});
+
+// 게시글 삭제 엔드포인트
+app.delete("/api/posts/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const post = await Post.findByIdAndDelete(id);
+        if (!post) {
+            return res.status(404).json({ error_message: "Post not found" });
+        }
+        res.json({ message: "Post deleted successfully!" });
+    } catch (error) {
+        res.status(500).json({ error_message: "Failed to delete post" });
+    }
+});
+
+// 현재 사용자 정보를 가져오는 엔드포인트
+app.get("/api/current-user", async (req, res) => {
+    try {
+        const user = await User.findOne();
+        if (!user) {
+            return res.status(404).json({ error_message: "No user found" });
+        }
+        res.json({ id: user._id, username: user.username });
+    } catch (error) {
+        res.status(500).json({ error_message: "Failed to retrieve current user" });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
