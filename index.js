@@ -1,4 +1,3 @@
-//👇🏻index.js
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -25,9 +24,18 @@ const UserSchema = new Schema({
     password: { type: String, required: true },
 });
 
+// Post Schema
+const PostSchema = new Schema({
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    date: { type: Date, default: Date.now }
+});
+
 // User Model
 const User = mongoose.model("User", UserSchema);
 
+// Post Model
+const Post = mongoose.model("Post", PostSchema);
 
 /* 회원가입 db, id 생성기 */
 const users = []; // 모든 사용자를 보관하기 위한 배열 db
@@ -92,7 +100,7 @@ app.post("/api/create/thread", async (req, res) => {
     });
 });
 
-//👇🏻 생성 된 포스트 저장
+// 생성 된 포스트 저장
 const threadList = [];
 
 /* 스레드 생성 경로 */
@@ -100,7 +108,7 @@ app.post("/api/create/thread", async (req, res) => {
     const { thread, userId } = req.body;
     const threadId = generateID();
 
-    //👇🏻 add post details to the array
+    // add post details to the array
     threadList.unshift({
         id: threadId,
         title: thread,
@@ -109,7 +117,7 @@ app.post("/api/create/thread", async (req, res) => {
         likes: [],
     });
 
-    //👇🏻 Returns a response containing the posts
+    // Returns a response containing the posts
     res.json({
         message: "Thread created successfully!",
         threads: threadList,
@@ -148,11 +156,11 @@ app.post("/api/thread/like", (req, res) => {
 
 /* 답글 표시 반환 */
 app.post("/api/thread/replies", (req, res) => {
-    //👇🏻 The post ID
+    // The post ID
     const { id } = req.body;
-    //👇🏻 searches for the post
+    // searches for the post
     const result = threadList.filter((thread) => thread.id === id);
-    //👇🏻 return the title and replies
+    // return the title and replies
     res.json({
         replies: result[0].replies,
         title: result[0].title,
@@ -177,6 +185,28 @@ app.post("/api/create/reply", async (req, res) => {
     res.json({
         message: "Response added successfully!",
     });
+});
+
+/* 게시글 목록 가져오기 */
+app.get("/api/posts", async (req, res) => {
+    const posts = await Post.find();
+    res.json(posts);
+});
+
+/* 게시글 작성 */
+app.post("/api/posts", async (req, res) => {
+    const { title, content } = req.body;
+    const newPost = new Post({
+        title,
+        content
+    });
+
+    try {
+        await newPost.save();
+        res.json({ message: "Post created successfully!" });
+    } catch (error) {
+        res.status(500).json({ error_message: "Failed to create post" });
+    }
 });
 
 app.listen(PORT, () => {
