@@ -1,6 +1,7 @@
 //👇🏻index.js
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const app = express();
 const PORT = 4000;
 
@@ -8,83 +9,87 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
+// mongoose connect
+mongoose
+    .connect("mongodb+srv://say_01:say_01@cluster0.4xvpm14.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+    .then(() => console.log("MongoDB connected..."))
+    .catch((err) => console.log(err));
+
+// mongoose set
+const { Schema } = mongoose;
+
+// User Schema
+const UserSchema = new Schema({
+    username: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+});
+
+// User Model
+const User = mongoose.model("User", UserSchema);
+
+
 /* 회원가입 db, id 생성기 */
 const users = []; // 모든 사용자를 보관하기 위한 배열 db
 const generateID = () => Math.random().toString(36).substring(2, 10); // id로 쓰일 예정
 
-/* 회원가입 API */
+// Register endpoint
 app.post("/api/register", async (req, res) => {
-	const { email, password, username } = req.body;
-	const id = generateID();
-	// 회원가입 시 동일인인지 유효성 검사
-	const result = users.filter(
-		(user) => user.email === email && user.password === password
-	);
-	//👇🏻 if true
-	if (result.length === 0) {
-		const newUser = { id, email, password, username };
-		//👇🏻 adds the user to the database (array)
-		users.push(newUser);
-		//👇🏻 returns a success message
-		return res.json({
-			message: "Account created successfully!",
-		});
-	}
-	//👇🏻 if there is an existing user
-	res.json({
-		error_message: "User already exists",
-	});
+    const { email, password, username } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+        return res.json({ error_message: "User already exists" });
+    }
+
+    // Create new user
+    const newUser = new User({
+        email,
+        password,
+        username,
+    });
+
+    try {
+        await newUser.save();
+        res.json({ message: "Account created successfully!" });
+    } catch (error) {
+        res.status(500).json({ error_message: "Failed to create account" });
+    }
 });
 
-/* api test */
-app.get("/api", (req, res) => {
-	res.json({
-		message: "Hello world",
-		도연: "그게 아니라! 근데!",
-		우정: "에바지예",
-		소미: "엽엽",
-		상욱: "미정",
-		세연: "허허",
-		연준: "으악",
-	});
-});
+// Login endpoint
+app.post("/api/login", async (req, res) => {
+    const { email, password } = req.body;
 
-/* 로그인 기능 구현 */
-app.post("/api/login", (req, res) => {
-	const { email, password } = req.body;
-	//👇🏻 checks if the user exists
-	let result = users.filter(
-		(user) => user.email === email && user.password === password
-	);
-	//👇🏻 if the user doesn't exist
-	if (result.length !== 1) {
-		return res.json({
-			error_message: "Incorrect credentials",
-		});
-	}
-	//👇🏻 Returns the id if successfuly logged in
-	res.json({
-		message: "Login successfully",
-		id: result[0].id,
-	});
+    // Check if user exists
+    const user = await User.findOne({ email, password });
+    if (!user) {
+        return res.json({ error_message: "Incorrect credentials" });
+    }
+
+    res.json({
+        message: "Login successfully",
+        id: user._id,
+    });
 });
 
 /* 스레드 생성 route */
 app.post("/api/create/thread", async (req, res) => {
-	const { thread, userId } = req.body;
-	let threadId = generateID();
-	threadList.unshift({
-		id: threadId,
-		title: thread,
-		userId,
-		replies: [],
-		likes: [],
-	});
+    const { thread, userId } = req.body;
+    let threadId = generateID();
+    threadList.unshift({
+        id: threadId,
+        title: thread,
+        userId,
+        replies: [],
+        likes: [],
+    });
 
-	res.json({
-		message: "Thread created successfully!",
-		threads: threadList,
-	});
+    res.json({
+        message: "Thread created successfully!",
+        threads: threadList,
+    });
 });
 
 //👇🏻 생성 된 포스트 저장
@@ -92,23 +97,23 @@ const threadList = [];
 
 /* 스레드 생성 경로 */
 app.post("/api/create/thread", async (req, res) => {
-	const { thread, userId } = req.body;
-	const threadId = generateID();
+    const { thread, userId } = req.body;
+    const threadId = generateID();
 
-	//👇🏻 add post details to the array
-	threadList.unshift({
-		id: threadId,
-		title: thread,
-		userId,
-		replies: [],
-		likes: [],
-	});
+    //👇🏻 add post details to the array
+    threadList.unshift({
+        id: threadId,
+        title: thread,
+        userId,
+        replies: [],
+        likes: [],
+    });
 
-	//👇🏻 Returns a response containing the posts
-	res.json({
-		message: "Thread created successfully!",
-		threads: threadList,
-	});
+    //👇🏻 Returns a response containing the posts
+    res.json({
+        message: "Thread created successfully!",
+        threads: threadList,
+    });
 });
 
 /* 스레드 리스트 반환 */
@@ -174,7 +179,6 @@ app.post("/api/create/reply", async (req, res) => {
     });
 });
 
-
 app.listen(PORT, () => {
-	console.log(`Server listening on ${PORT}`);
+    console.log(`Server listening on ${PORT}`);
 });
